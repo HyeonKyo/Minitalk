@@ -91,7 +91,7 @@ void	send_all_bits(char c)
 	i = 8;
 	while (i > 0)
 	{
-		usleep(100);
+		usleep(120);
 		send_bit(c, i--);
 		pause();
 	}

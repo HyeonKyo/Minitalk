@@ -44,9 +44,7 @@ void	len_handler(int sig, siginfo_t *info, void *context)
 	{
 		i++;
 		if (i == 4)
-		{
 			fg = 1;
-		}
 		cnt = 0;
 	}
 	else if (cnt % 8 == 0)
@@ -57,7 +55,7 @@ void	len_handler(int sig, siginfo_t *info, void *context)
 		{
 			write(1, "\n", 1);
 			kill(g_client_pid, SIGUSR2);
-			usleep(1000);
+			usleep(500);
 			kill(g_client_pid, SIGUSR2);
 			g_client_pid = -1;
 			len.num = 0;
@@ -67,7 +65,7 @@ void	len_handler(int sig, siginfo_t *info, void *context)
 			return ;
 		}
 	}
-	usleep(100);
+	usleep(120);
 	kill(g_client_pid, SIGUSR2);
 }
 
