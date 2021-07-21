@@ -19,6 +19,8 @@ void	check_incorrect_pid(siginfo_t *info)
 	if (info->si_pid != g_client_pid)
 	{
 		kill(g_client_pid, SIGUSR1);
+		kill(info->si_pid, SIGUSR1);
+		g_client_pid = 0;
 		sigerror();
 	}
 }
@@ -42,7 +44,9 @@ void	len_handler(int sig, siginfo_t *info, void *context)
 	{
 		i++;
 		if (i == 4)
+		{
 			fg = 1;
+		}
 		cnt = 0;
 	}
 	else if (cnt % 8 == 0)
@@ -53,12 +57,12 @@ void	len_handler(int sig, siginfo_t *info, void *context)
 		{
 			write(1, "\n", 1);
 			kill(g_client_pid, SIGUSR2);
-			usleep(100);
+			usleep(1000);
 			kill(g_client_pid, SIGUSR2);
-			usleep(100);
 			g_client_pid = -1;
 			len.num = 0;
 			cnt = 0;
+			fg = 0;
 			i = 0;
 			return ;
 		}
@@ -83,8 +87,6 @@ int	main(void)
 	sigaction(SIGUSR1, &act, 0);
 	sigaction(SIGUSR2, &act, 0);
 	while (1)
-	{
 		pause();
-	}
 	return (0);
 }

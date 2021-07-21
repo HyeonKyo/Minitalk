@@ -7,13 +7,14 @@ int	check_pid(char *argv1)
 	int	i;
 
 	i = -1;
+	if (argv1[0] == '+')
+		i++;
 	while (argv1[++i])
 	{
 		if (!ft_isdigit(argv1[i]))
-			exit(1);
+			error("Input error");
 	}
-	//음수는 예외처리하는 아토이로 변경
-	return (ft_atoi(argv1));
+	return (mt_atoi(argv1));
 }
 
 void	send_len(unsigned int str_len)
@@ -59,11 +60,11 @@ void	catch_signal(int sig, siginfo_t *info, void *context)
 	else
 	{
 		if (sig == SIGUSR2)
-			write(1, "Send message complete!\n", 24);
+			write(1, "\nComplete send message!\n", 25);
 		else
-			write(1, "Send error!\n", 13);
+			error("\nSend error!!!");
+		g_flag = 0;
 		g_server_pid = 0;
-		usleep(50);
 		exit(0);
 	}
 }
@@ -74,6 +75,7 @@ void	send_bit(char c, int mask_num)
 	int	bit_mask;
 
 	bit_mask = return_mask_number(mask_num);
+	ret = 0;
 	if (c & bit_mask)
 		ret = kill(g_server_pid, SIGUSR2);
 	else
@@ -89,6 +91,7 @@ void	send_all_bits(char c)
 	i = 8;
 	while (i > 0)
 	{
+		usleep(100);
 		send_bit(c, i--);
 		pause();
 	}
@@ -96,13 +99,11 @@ void	send_all_bits(char c)
 
 void	send_message(char *str, int len)
 {
-	int		i;
+	int	i;
 
 	i = -1;
 	while (++i < len)
-	{
 		send_all_bits(str[i]);
-	}
 }
 
 int	main(int ac, char **argv)

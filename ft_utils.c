@@ -8,6 +8,13 @@ int	ft_isdigit(int c)
 	return (0);
 }
 
+void	error(char *str)
+{
+	write(2, str, ft_strlen(str));
+	write(2, "\n", 1);
+	exit(1);
+}
+
 void	print_num(unsigned int n, int *flag)
 {
 	char	c;
@@ -66,31 +73,25 @@ size_t	ft_strlen(const char *str)
 	return (i);
 }
 
-int	ft_atoi(const char *str)
+int	mt_atoi(const char *str)
 {
 	int	i;
-	int	sign;
 	int	num;
 
 	i = 0;
-	sign = 1;
 	num = 0;
 	while ((str[i] >= 9 && str[i] <= 13) || str[i] == ' ')
 		i++;
-	if (str[i] == '-' || str[i] == '+')
-	{
-		if (str[i] == '-')
-			sign = -1;
+	if (str[i] == '+')
 		i++;
-	}
 	while (str[i] >= '0' && str[i] <= '9')
 		num = num * 10 + (str[i++] - '0');
-	return (sign * num);
+	return (num);
 }
 
 void	sigerror(void)
 {
-	write(2, "signal error\n", 13);
+	write(2, "\nSignal error\n", 14);
 	exit(1);
 }
 
