@@ -1,32 +1,74 @@
 #include "minitalk.h"
 #include "utils.h"
 
-void	bit_masking(char *c, int check)
+void	bit_masking(char *c, int signo)
 {
 	*c = *c << 1;
-	if (check == 2)
+	if (signo == SIGUSR2)
 		*c |= ADD_BIT;
 }
 
-void	handler(int signo)
+void	get_client_pid(siginfo_t *info)
 {
-	static char	c;
-	static int	len;//static변수는 초기화하지 않아도 0으로 초기화됨.
+	if (g_client_pid <= 0)
+		g_client_pid = info->si_pid;
+}
 
-	if (len == 0)
-		c = 0;
-	len++;
-	if (signo == SIGUSR1)
-		bit_masking(&c, 1);
+void	check_incorrect_pid(siginfo_t *info)
+{
+	if (info->si_pid != g_client_pid)
+	{
+		kill(g_client_pid, SIGUSR1);
+		kill(info->si_pid, SIGUSR1);
+		g_client_pid = 0;
+		sigerror();
+	}
+}
+
+void	len_handler(int sig, siginfo_t *info, void *context)
+{
+	static t_info	len;
+	static int		i;
+	static char		c;
+	static int		cnt;
+	static int		fg;
+
+	get_client_pid(info);
+	check_incorrect_pid(info);
+	if (fg == 0)
+		bit_masking(&(len.arr[i]), sig);
 	else
-		bit_masking(&c, 2);
-	if (len == 8)
+		bit_masking(&c, sig);
+	cnt++;
+	if (fg == 0 && cnt % 8 == 0)
+	{
+		i++;
+		if (i == 4)
+		{
+			fg = 1;
+		}
+		cnt = 0;
+	}
+	else if (cnt % 8 == 0)
 	{
 		print_char(c);
-		len = 0;
 		c = 0;
-		return ;
+		if (cnt / 8 == len.num)
+		{
+			write(1, "\n", 1);
+			kill(g_client_pid, SIGUSR2);
+			usleep(1000);
+			kill(g_client_pid, SIGUSR2);
+			g_client_pid = -1;
+			len.num = 0;
+			cnt = 0;
+			fg = 0;
+			i = 0;
+			return ;
+		}
 	}
+	usleep(100);
+	kill(g_client_pid, SIGUSR2);
 }
 
 int	main(void)
@@ -35,15 +77,13 @@ int	main(void)
 	//클라이언트에서 처음 4바이트를 클라이언트 pid값을 보내면
 	//서버에서는 최초 클라이언트의 pid값을 알 수 있다.
 	pid_t	pid;
-	struct sigaction	act;
+	t_act	act;
 
+	g_str_len = 0;
+	g_client_pid = 0;
 	pid = getpid();
 	ft_putnbr(pid);
-	sigemptyset(&act.sa_mask);
-	sigaddset(&act.sa_mask, SIGUSR1);
-	sigaddset(&act.sa_mask, SIGUSR2);
-	act.sa_handler = handler;
-	act.sa_flags = 0;
+	setup_act(&act, len_handler);
 	sigaction(SIGUSR1, &act, 0);
 	sigaction(SIGUSR2, &act, 0);
 	while (1)

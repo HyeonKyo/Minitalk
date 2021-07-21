@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror
+CFLAGS = -g
 SEV_SRCS = server.c ft_utils.c
 CLT_SRCS = client.c ft_utils.c
 SRCS = $(SEV_SRCS) $(CLT_SRCS)

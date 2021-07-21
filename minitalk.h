@@ -12,4 +12,16 @@
 #include <signal.h>
 #include <stdio.h>
 
+typedef union u_info
+{
+	unsigned int	num;
+	char	arr[4];
+}			t_info;
+
+int	g_str_len;
+pid_t	g_client_pid;
+pid_t	g_server_pid;
+
+void	send_message(char *str, int len);
+
 #endif
