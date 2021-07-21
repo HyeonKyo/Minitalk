@@ -1,5 +1,6 @@
 #include "minitalk.h"
 #include "utils.h"
+int g_flag = 0;
 
 int	check_pid(char *argv1)
 {
@@ -11,16 +12,17 @@ int	check_pid(char *argv1)
 		if (!ft_isdigit(argv1[i]))
 			exit(1);
 	}
+	//음수는 예외처리하는 아토이로 변경
 	return (ft_atoi(argv1));
 }
 
-void	send_len(pid_t serv_pid, unsigned int str_len, struct sigaction *act)
+void	send_len(unsigned int str_len)
 {
 	t_info	info;
 	
 	ft_memset(&info, 0, sizeof(t_info));
 	info.num = str_len;
-	send_message(serv_pid, info.arr, act, 4);
+	send_message(info.arr, 4);
 }
 
 int		return_mask_number(int mask_num)
@@ -45,78 +47,82 @@ int		return_mask_number(int mask_num)
 		return (0);
 }
 
-// void	check_transmission(int signo)
-// {
-// 	if (signo == SIGUSR1)
-
-// }
-
-void	next(int signo)
+void	catch_signal(int sig, siginfo_t *info, void *context)
 {
-	if (signo == SIGUSR1)
+	if (info->si_pid != g_server_pid)
 		sigerror();
-	return ;
+	if (g_flag == 0)
+	{
+		if (sig == SIGUSR1)
+			sigerror();
+	}
+	else
+	{
+		if (sig == SIGUSR2)
+			write(1, "Send message complete!\n", 24);
+		else
+			write(1, "Send error!\n", 13);
+		g_server_pid = 0;
+		usleep(50);
+		exit(0);
+	}
 }
 
-void	send_bit(pid_t serv_pid, char c, int mask_num)
+void	send_bit(char c, int mask_num)
 {
 	int	ret;
 	int	bit_mask;
 
 	bit_mask = return_mask_number(mask_num);
 	if (c & bit_mask)
-		ret = kill(serv_pid, SIGUSR2);
+		ret = kill(g_server_pid, SIGUSR2);
 	else
-		ret = kill(serv_pid, SIGUSR1);
+		ret = kill(g_server_pid, SIGUSR1);
 	if (ret < 0)
 		sigerror();
-	
 }
 
-void	send_all_bits(pid_t serv_pid, char c, struct sigaction *act)
+void	send_all_bits(char c)
 {
 	int	i;
 
 	i = 8;
 	while (i > 0)
 	{
-		sigaction(SIGUSR1, act, 0);
-		sigaction(SIGUSR2, act, 0);
-		send_bit(serv_pid, c, i--);
+		send_bit(c, i--);
 		pause();
 	}
 }
 
-void	send_message(pid_t serv_pid, char *str, struct sigaction *act, int len)
+void	send_message(char *str, int len)
 {
 	int		i;
 
 	i = -1;
 	while (++i < len)
 	{
-		send_all_bits(serv_pid, str[i], act);
-		//usleep(50);
+		send_all_bits(str[i]);
 	}
 }
 
 int	main(int ac, char **argv)
 {
-	pid_t	serv_pid;
 	char	*str;
 	unsigned int	str_len;
-	struct sigaction	act;
+	t_act	act;
 
-	sigemptyset(&act.sa_mask);
-	sigaddset(&act.sa_mask, SIGUSR1);
-	sigaddset(&act.sa_mask, SIGUSR2);
-	act.sa_handler = next;
-	act.sa_flags = 0;
 	if (ac < 2)
 		return (1);
-	serv_pid = check_pid(argv[1]);
+	setup_act(&act, catch_signal);
+	g_server_pid = check_pid(argv[1]);
 	str = argv[2];
 	str_len = (unsigned int)ft_strlen(str);
-	send_len(serv_pid, str_len, &act);
-	send_message(serv_pid, str, &act, str_len);
+	sigaction(SIGUSR1, &act, 0);
+	sigaction(SIGUSR2, &act, 0);
+	send_len(str_len);
+	send_message(str, str_len);
+	g_flag = 1;
+	while (1)
+		pause();
 	return (0);
 }

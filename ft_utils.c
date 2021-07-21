@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "minitalk.h"
 
 int	ft_isdigit(int c)
 {
@@ -91,4 +92,13 @@ void	sigerror(void)
 {
 	write(2, "signal error\n", 13);
 	exit(1);
+}
+
+void	setup_act(t_act *act, void (*handler)(int, siginfo_t *, void *))
+{
+	sigemptyset(&(act->sa_mask));
+	sigaddset(&(act->sa_mask), SIGUSR1);
+	sigaddset(&(act->sa_mask), SIGUSR2);
+	act->sa_sigaction = handler;
+	act->sa_flags = SA_SIGINFO;
 }
